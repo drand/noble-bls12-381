@@ -42,23 +42,13 @@ const POW_2_383 = POW_2_382 * 2n;
 const PUBLIC_KEY_LENGTH = 48;
 
 let sha256: (a: Uint8Array) => Promise<Uint8Array>;
-
-if (typeof window == "object" && "crypto" in window) {
-  sha256 = async (message: Uint8Array) => {
-    const buffer = await window.crypto.subtle.digest("SHA-256", message.buffer);
-    return new Uint8Array(buffer);
-  };
-} else if (typeof process === "object" && "node" in process.versions) {
-  const req = require;
-  const { createHash } = req("crypto");
-  sha256 = async (message: Uint8Array) => {
-    const hash = createHash("sha256");
-    hash.update(message);
-    return Uint8Array.from(hash.digest());
-  };
-} else {
-  throw new Error("The environment doesn't have sha256 function");
-}
+const req = require;
+const { createHash } = req("crypto");
+sha256 = async (message: Uint8Array) => {
+  const hash = createHash("sha256");
+  hash.update(message);
+  return Uint8Array.from(hash.digest());
+};
 
 function fromHexBE(hex: string) {
   return BigInt(`0x${hex}`);
@@ -141,13 +131,22 @@ function powMod(x: bigint, power: bigint, order: bigint) {
   return res.value;
 }
 
-export async function getXCoordinate(hash: Hash, domain: Bytes) {
+export async function getXCoordinateG2(hash: Hash, domain: Bytes) {
   const xReconstructed = toBigInt(
     await sha256(concatBytes(hash, domain, "01"))
   );
   const xImage = toBigInt(await sha256(concatBytes(hash, domain, "02")));
   return new Fp2(xReconstructed, xImage);
 }
+
+export async function getXCoordinateG1(hash: Hash, domain: Bytes) {
+  const xReconstructed = toBigInt(
+    await sha256(concatBytes(hash, domain, "01"))
+  );
+  return new Fp(xReconstructed);
+}
+
+
 
 const POW_SUM = POW_2_383 + POW_2_382;
 
@@ -248,7 +247,7 @@ export function signatureToG2(signature: Bytes) {
 }
 
 export async function hashToG2(hash: Hash, domain: Bytes) {
-  let xCoordinate = await getXCoordinate(hash, domain);
+  let xCoordinate = await getXCoordinateG2(hash, domain);
   let newResult: Fp2 | null = null;
   do {
     newResult = xCoordinate
@@ -262,3 +261,19 @@ export async function hashToG2(hash: Hash, domain: Bytes) {
   const result = new Point(xCoordinate, yCoordinate, new Fp2(1n, 0n), Fp2);
   return result.multiply(Fp2.COFACTOR);
 }
+
+/*export async function hashToG1(hash: Hash, domain: Bytes) {*/
+  //let xCoordinate = await getXCoordinateG1(hash, domain);
+  //let newResult: Fp | null = null;
+  //do {
+    //newResult = xCoordinate
+      //.pow(3n)
+      //.add(new Fp(4n))
+      //.modularSquareRoot();
+    //const addition = newResult ? xCoordinate.zero : xCoordinate.one;
+    //xCoordinate = xCoordinate.add(addition);
+  //} while (newResult === null);
+  //const yCoordinate: Fp = newResult;
+  //const result = new Point(xCoordinate, yCoordinate, new Fp(1n), Fp);
+  //return result;
+/*}*/

@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "compile": "tsc -d"
+    "compile": "rm lib/*; tsc -d"
   },
   "author": "Paul Miller (https://paulmillr.com), forked by nikkolasg",
   "homepage": "https://github.com/drand/noble-bls12-381",
