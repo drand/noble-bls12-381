@@ -42,8 +42,7 @@ const POW_2_383 = POW_2_382 * 2n;
 const PUBLIC_KEY_LENGTH = 48;
 
 let sha256: (a: Uint8Array) => Promise<Uint8Array>;
-const req = require;
-const { createHash } = req("crypto");
+const { createHash } = require("crypto");
 sha256 = async (message: Uint8Array) => {
   const hash = createHash("sha256");
   hash.update(message);
